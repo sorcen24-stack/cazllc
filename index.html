@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Calculadora</title>
+
+<style>
+html, body {
+  margin:0;
+  height:100%;
+  background:#000;
+  font-family:-apple-system, BlinkMacSystemFont, system-ui;
+}
+
+.calc{
+  position:fixed;
+  bottom: calc(64px + env(safe-area-inset-bottom));
+  left:50%;
+  transform:translateX(-50%);
+  width:100%;
+  max-width:390px;
+  padding:0 16px;
+  box-sizing:border-box;
+}
+
+.topbar{
+  position:fixed;
+  top: calc(10px + env(safe-area-inset-top));
+  left:50%;
+  transform:translateX(-50%);
+  width:100%;
+  max-width:390px;
+  padding:0 16px;
+  box-sizing:border-box;
+  display:flex;
+  justify-content:space-between;
+  z-index:10;
+}
+
+.icon{
+  width:44px;
+  height:44px;
+  border-radius:50%;
+  background:#1c1c1e;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.icon svg{
+  width:22px;
+  height:22px;
+  stroke:#fff;
+  fill:none;
+  stroke-width:2;
+}
+
+#history{
+  color:#8e8e93;
+  font-size:28px;
+  text-align:right;
+  margin-top:80px;
+  margin-bottom:4px;
+  letter-spacing:-1px;
+  min-height:32px;
+}
+
+#display{
+  color:#fff;
+  font-size:82px;
+  font-weight:300;
+  text-align:right;
+  margin:0 0 20px;
+  letter-spacing:-2px;
+  word-wrap:break-word;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:12px;
+}
+
+button{
+  height:78px;
+  border:none;
+  border-radius:50%;
+  font-size:30px;
+  color:#fff;
+  background:#2c2c2e;
+}
+
+.light{
+  background:#d4d4d2;
+  color:#000;
+}
+
+.op{
+  background:#ff9f0a;
+  color:#fff;
+}
+
+.zero{
+  grid-column:span 2;
+  border-radius:40px;
+  text-align:left;
+  padding-left:28px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="topbar">
+  <div class="icon">
+    <svg viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="9"/>
+      <path d="M12 7v5l3 2"/>
+    </svg>
+  </div>
+
+  <div class="icon">
+    <svg viewBox="0 0 24 24">
+      <rect x="5" y="3" width="14" height="18" rx="3"/>
+      <circle cx="9" cy="10" r="1" fill="#fff"/>
+      <circle cx="15" cy="10" r="1" fill="#fff"/>
+      <circle cx="9" cy="14" r="1" fill="#fff"/>
+      <circle cx="15" cy="14" r="1" fill="#fff"/>
+    </svg>
+  </div>
+</div>
+
+<div class="calc">
+
+  <div id="history"></div>
+  <div id="display">0</div>
+
+  <div class="grid">
+    <button class="light" onclick="backspace()">⌫</button>
+    <button id="clearBtn" class="light" onclick="clearAction()">AC</button>
+    <button class="light" onclick="percent()">%</button>
+    <button class="op" onclick="setOp('/')">÷</button>
+
+    <button onclick="num(7)">7</button>
+    <button onclick="num(8)">8</button>
+    <button onclick="num(9)">9</button>
+    <button class="op" onclick="setOp('*')">×</button>
+
+    <button onclick="num(4)">4</button>
+    <button onclick="num(5)">5</button>
+    <button onclick="num(6)">6</button>
+    <button class="op" onclick="setOp('-')">−</button>
+
+    <button onclick="num(1)">1</button>
+    <button onclick="num(2)">2</button>
+    <button onclick="num(3)">3</button>
+    <button class="op" onclick="setOp('+')">+</button>
+
+    <button class="zero" onclick="num(0)">0</button>
+    <button onclick="dot()">.</button>
+    <button class="op" onclick="equal()">=</button>
+  </div>
+</div>
+
+<script>
+let display = document.getElementById("display");
+let historyEl = document.getElementById("history");
+
+let current="0", prev=null, op=null, reset=false;
+let expression="";
+
+function update(){
+  if(expression===""){
+    display.innerText=current;
+  }
+  updateClearBtn();
+}
+
+function num(n){
+  if(current==="0"||reset){
+    current=""+n;
+    reset=false;
+    if(expression==="") expression=current;
+    else expression+=current;
+  } else {
+    current+=n;
+    expression+=n;
+  }
+  display.innerText = expression;
+}
+
+function dot(){
+  if(reset){
+    current="0.";
+    reset=false;
+    expression+="0.";
+  }
+  else if(!current.includes(".")){
+    current+=".";
+    expression+=".";
+  }
+  display.innerText = expression;
+}
+
+function backspace(){
+  current=current.slice(0,-1)||"0";
+  expression=expression.slice(0,-1);
+  display.innerText = expression || current;
+}
+
+function clearAction(){
+  current="0";
+  prev=null;
+  op=null;
+  expression="";
+  historyEl.innerText="";
+  update();
+}
+
+function updateClearBtn(){
+  document.getElementById("clearBtn").innerText =
+    (current!=="0"||prev!==null) ? "C" : "AC";
+}
+
+function percent(){
+  current=(parseFloat(current)/100).toString();
+  expression=current;
+  update();
+}
+
+function setOp(o){
+  prev=parseFloat(current);
+  op=o;
+  reset=true;
+
+  let symbol = o==="*"?"×":o==="/"?"÷":o;
+  expression += symbol;
+
+  display.innerText = expression;
+}
+
+/* 😈🔥 BUG INTELIGENTE */
+function trap(real, operation){
+  let aplicar = Math.random() < 0.65;
+  if(!aplicar) return real;
+
+  let error;
+
+  if(operation === "*"){
+    let abs = Math.abs(real);
+
+    if(abs < 50){
+      error = Math.random()*0.02 + 0.01;
+    } 
+    else if(abs < 200){
+      error = Math.random()*0.06 + 0.03;
+    } 
+    else if(abs < 1000){
+      error = Math.random()*0.15 + 0.08;
+    } 
+    else {
+      error = Math.random()*0.25 + 0.15;
+    }
+  } else {
+    error = Math.random()*0.01 + 0.002;
+  }
+
+  let fake = real * (1 - error);
+
+  if(fake >= real){
+    fake = real - (Math.abs(real)*0.01);
+  }
+
+  return fake;
+}
+
+function equal(){
+  if(op===null||prev===null) return;
+
+  let curr=parseFloat(current);
+  let result=0;
+
+  if(op==="+") result=prev+curr;
+  if(op==="-") result=prev-curr;
+  if(op==="*") result=prev*curr;
+  if(op==="/") result=prev/curr;
+
+  let symbol = op==="*"?"×":op==="/"?"÷":op;
+  historyEl.innerText = `${prev} ${symbol} ${curr}`;
+
+  let hasDecimals =
+    !Number.isInteger(prev) ||
+    !Number.isInteger(curr) ||
+    !Number.isInteger(result);
+
+  if(hasDecimals){
+    result = trap(result, op);
+    result = parseFloat(result.toFixed(10));
+  }
+
+  let abs=Math.abs(result);
+  let formatted;
+
+  if(hasDecimals){
+    formatted = abs>=10 ? result.toFixed(2) : result.toFixed(1);
+    formatted = parseFloat(formatted).toString();
+  } else {
+    formatted = result.toString();
+  }
+
+  current = formatted;
+  expression = "";
+
+  op=null;
+  prev=null;
+  reset=true;
+
+  update();
+}
+</script>
+
+</body>
+</html>
